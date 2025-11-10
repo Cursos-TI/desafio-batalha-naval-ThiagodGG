@@ -1,89 +1,147 @@
 #include <stdio.h>
 
-#define TAM 10       // Tamanho do tabuleiro 10x10 bidimensional
-#define TAM_NAVIO 3  // Tamanho fixo dos navios (3 posições)
+#define TAM 10    
+#define TAM_HAB 5  
+#define HABILIDADE 5
 #define AGUA 0
 #define NAVIO 3
 
-int main() {
-   
-    int tabuleiro [TAM][TAM]; //Matriz do tabuleiro
-    int i, j;
-
-    // Inniciando o tabuleiro com a água = 0
-    for (i = 0; i < TAM; i++){
-        for (j = 0; j < TAM; j++){
+//Inicialização do tabuleiro
+void inicializarTabuleiro(int tabuleiro[TAM][TAM]) {
+    for (int i = 0; i < TAM; i++)
+        for (int j = 0; j < TAM; j++)
             tabuleiro[i][j] = AGUA;
-        }
-    }
+}
 
-    //Coordenadas dos navios
-    int linNavioHorz = 2;
-    int colNavioHorz = 4;
-    int linNavioVert = 5;
-    int colNavioVert = 7;
+// função para imprimir o tabuleiro
+void exibirTabuleiro(int tabuleiro[TAM][TAM]) {
+    printf("\n----- TABULEIRO DE BATALHA NAVAL -----\n\n");
+    printf("   ");
+    for (int j = 0; j < TAM; j++) printf("%2d ", j);
+    printf("\n");
 
-    // --- Validação dos limites do tabuleiro ---
-    // Verifica se o navio horizontal cabe no tabuleiro
-    if (colNavioHorz + TAM_NAVIO > TAM) {
-        printf("Erro: o navio horizontal ultrapassa os limites do tabuleiro.\n");
-        return 1;
-    }
-
-    // Navio Horizontal
-    for (i = 0; i < TAM_NAVIO; i++) {
-        tabuleiro[linNavioHorz][colNavioHorz + i] = NAVIO;
-    }
-
-    for (i = 0; i < TAM_NAVIO; i++) {
-        if (tabuleiro[linNavioVert + i][colNavioVert] == NAVIO) {
-            printf("Erro: os navios se sobrepõem no tabuleiro!\n");
-            return 1;
-        }
-    }
-
-    // Navio Vertical
-     for (i = 0; i < TAM_NAVIO; i++) {
-        tabuleiro[linNavioVert + i][colNavioVert] = NAVIO;
-    }
-
-    // Tabuleiro 
-    printf("\n=== TABULEIRO DE BATALHA NAVAL ===\n\n");
-    for (i = 0; i < TAM; i++) {
-        for (j = 0; j < TAM; j++) {
-            printf("%d ", tabuleiro[i][j]);
+    for (int i = 0; i < TAM; i++) {
+        printf("%2d ", i);
+        for (int j = 0; j < TAM; j++) {
+            if (tabuleiro[i][j] == AGUA) printf(" 0 ");        // Água
+            else if (tabuleiro[i][j] == NAVIO) printf(" 3 ");  // Navio
+            else if (tabuleiro[i][j] == HABILIDADE) printf(" 5 "); // Área de efeito
         }
         printf("\n");
     }
+    printf("\nLegenda: 0 = Água | 3 = Navio | 5 = Área de Habilidade\n");
+}
 
-    printf("\nLegenda: 0 = Água | 3 = Navio\n");
-    printf("\n");
+//Matriz em forma de CONE
+void gerarCone(int cone[TAM_HAB][TAM_HAB]) {
+    for (int i = 0; i < TAM_HAB; i++){
+        for (int j = 0; j < TAM_HAB; j++){
+            if (j >= (TAM_HAB / 2) - i && j <= (TAM_HAB / 2) + i)
+                cone[i][j] = 1;
+            else
+                cone[i][j]=0;
+            }
+        }
+    }
 
-    // Nível Aventureiro - Expansão do Tabuleiro e Posicionamento Diagonal
-    // Sugestão: Expanda o tabuleiro para uma matriz 10x10.
-    // Sugestão: Posicione quatro navios no tabuleiro, incluindo dois na diagonal.
-    // Sugestão: Exiba o tabuleiro completo no console, mostrando 0 para posições vazias e 3 para posições ocupadas.
+//Matriz em forma de CRUZ
+void gerarCruz (int cruz[TAM_HAB][TAM_HAB]){
+    int centro = TAM_HAB / 2;
+    for (int i = 0; i < TAM_HAB; i++){
+        for (int j = 0; j < TAM_HAB; j++){
+            if (i == centro || j == centro)
+                cruz[i][j] = 1;
+            else
+                cruz[i][j] = 0;
+        }
+    }
+}
 
-    // Nível Mestre - Habilidades Especiais com Matrizes
-    // Sugestão: Crie matrizes para representar habilidades especiais como cone, cruz, e octaedro.
-    // Sugestão: Utilize estruturas de repetição aninhadas para preencher as áreas afetadas por essas habilidades no tabuleiro.
-    // Sugestão: Exiba o tabuleiro com as áreas afetadas, utilizando 0 para áreas não afetadas e 1 para áreas atingidas.
+//Matriz em forma de OCTAEDRO
+void gerarOctaedro(int octaedro[TAM_HAB][TAM_HAB]){
+    int centro = TAM_HAB / 2;
+    for (int i = 0; i < TAM_HAB; i++){
+        for(int j = 0; j < TAM_HAB; j++){
+            if (abs(i - centro) + abs(j - centro) <= centro)
+                octaedro[i][j] = 1;
+            else
+                octaedro[i][j] = 0;
+        }
+    }
+}
 
-    // Exemplos de exibição das habilidades:
-    // Exemplo para habilidade em cone:
-    // 0 0 1 0 0
-    // 0 1 1 1 0
-    // 1 1 1 1 1
+//Matriz de habilidade
+void aplicarHabilidade(int tabuleiro[TAM][TAM], int habilidade[TAM_HAB][TAM_HAB], int origemLinha, int origemColuna) {
+    int deslocamento = TAM_HAB / 2;
+
+    for (int i = 0; i < TAM_HAB; i++) {
+        for (int j = 0; j < TAM_HAB; j++) {
+            int linha = origemLinha + (i - deslocamento);
+            int coluna = origemColuna + (j - deslocamento);
+
+            // Garante que o efeito não ultrapasse os limites do tabuleiro
+            if (linha >= 0 && linha < TAM && coluna >= 0 && coluna < TAM) {
+                if (habilidade[i][j] == 1 && tabuleiro[linha][coluna] == AGUA)
+                    tabuleiro[linha][coluna] = HABILIDADE;
+            }
+        }
+    }
+}
+
+
+int main() {
+   
+    int tabuleiro[TAM][TAM];
+    inicializarTabuleiro(tabuleiro);
+
+    //Posiciona navios
+    tabuleiro[2][3] = NAVIO;
+    tabuleiro[2][4] = NAVIO;
+    tabuleiro[2][5] = NAVIO;
+    tabuleiro[6][6] = NAVIO;
+    tabuleiro[7][6] = NAVIO;
+
+    //Matriz de habilidades
+    int cone[TAM_HAB][TAM_HAB];
+    int cruz[TAM_HAB][TAM_HAB];
+    int octaedro[TAM_HAB][TAM_HAB];
+
+    //Formas das habilidades
+    gerarCone(cone);
+    gerarCruz(cruz);
+    gerarOctaedro(octaedro);
+
+    //Habilidades no tabuleiro
+    aplicarHabilidade(tabuleiro, cone, 4, 4);      
+    aplicarHabilidade(tabuleiro, cruz, 7, 2);      
+    aplicarHabilidade(tabuleiro, octaedro, 5, 8);
+
+    //Resultado final
+    exibirTabuleiro(tabuleiro);
+
+    //Exibiçao dos resultados
+    printf("\n----- MATRIZES DE HABILIDADES -----\n");
     
-    // Exemplo para habilidade em octaedro:
-    // 0 0 1 0 0
-    // 0 1 1 1 0
-    // 0 0 1 0 0
+    printf("\nCone:\n");
+    for (int i = 0; i < TAM_HAB; i++) {
+        for (int j = 0; j < TAM_HAB; j++)
+            printf("%d ", cone[i][j]);
+        printf("\n");
+    }
 
-    // Exemplo para habilidade em cruz:
-    // 0 0 1 0 0
-    // 1 1 1 1 1
-    // 0 0 1 0 0
+    printf("\nCruz:\n");
+    for (int i = 0; i < TAM_HAB; i++) {
+        for (int j = 0; j < TAM_HAB; j++)
+            printf("%d ", cruz[i][j]);
+        printf("\n");
+    }
+
+    printf("\nOctaedro:\n");
+    for (int i = 0; i < TAM_HAB; i++) {
+        for (int j = 0; j < TAM_HAB; j++)
+            printf("%d ", octaedro[i][j]);
+        printf("\n");
+    }
 
     return 0;
 }
